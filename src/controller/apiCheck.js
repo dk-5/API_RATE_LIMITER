@@ -16,6 +16,11 @@ const apiStore = async (req, res) => {
         const plan = user ? user.plan : 'free'
         const config = planConfigs[plan] || planConfigs.free
 
+        const existingKeys = await Api.countDocuments({ userId, isActive: true })
+        if (existingKeys >= config.maxKeys) {
+            return res.status(400).json({ error: `Maximum ${config.maxKeys} API key(s) allowed for ${config.label} plan` })
+        }
+
         const newApi = new Api({
             userId,
             hashedKey,

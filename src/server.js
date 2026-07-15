@@ -3,12 +3,24 @@ import cors from 'cors'
 import 'dotenv/config'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import mongoose from 'mongoose'
 import connectDb from './db/db.js'
 import authRouter from './routes/authRoute.js'
 import apiRouter from './routes/apiRoutes.js'
 import dashboardRouter from './routes/dashboardRoutes.js'
 
-connectDb()
+await connectDb()
+
+const collections = await mongoose.connection.db.listCollections().toArray()
+const apisCollection = collections.find(c => c.name === 'apis')
+if (apisCollection) {
+    const indexes = await mongoose.connection.db.collection('apis').indexes()
+    const userIdIndex = indexes.find(i => i.key && i.key.userId === 1 && i.unique)
+    if (userIdIndex) {
+        await mongoose.connection.db.collection('apis').dropIndex('userId_1')
+        await mongoose.connection.db.collection('apis').createIndex({ userId: 1 })
+    }
+}
 
 const app = express()
 const __filename = fileURLToPath(import.meta.url)
